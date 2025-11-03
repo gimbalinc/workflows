@@ -15,25 +15,27 @@ jobs:
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
           
+          echo "Checking PR title: '$PR_TITLE'"
+          echo "Title length: ${#PR_TITLE}"
+          
           # Define the regex pattern for JIRA ticket format
-          REGEX='^[A-Z]{2,8}-[0-9]{2,8}(:?\s|$)'
+          REGEX='^[A-Z]{2,8}-[0-9]{2,8}:'
           
           # Check if title matches the pattern
           if echo "$PR_TITLE" | grep -qE "$REGEX"; then
-            echo "✅ PR title is valid: $PR_TITLE"
+            echo "✅ PR title: $PR_TITLE is valid!"
             exit 0
           else
-            echo "❌ PR title is invalid: $PR_TITLE"
+            echo "❌ PR title is invalid"
             echo ""
             echo "The PR title must follow this format:"
             echo "  PROJECT-ID: Description"
             echo ""
-            echo "Pattern: 2-8 uppercase letters, dash, 2-8 digits, followed by colon or space"
+            echo "Pattern: PROJECT-ID: where PROJECT is 2-8 uppercase letters and ID is 2-8 digits"
             echo ""
             echo "Examples:"
             echo "  ✅ DSOS-1234: Fix a critical issue"
             echo "  ✅ DAT-5678: Add new feature"
             echo "  ✅ GDOPS-999: Update documentation"
-            echo "  ✅ AB-12 Feature name"
             exit 1
           fi
