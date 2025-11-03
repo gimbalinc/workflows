@@ -5,7 +5,11 @@
 name: pr-jira-ticket
 on:
   pull_request:
-    types: [opened, edited, reopened]
+    types: [opened, edited, reopened, synchronize]
+  push:
+    branches-ignore:
+      - main
+      - master
 
 jobs:
   check-pr-title:
@@ -15,11 +19,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # If triggered by push, find the PR for this branch
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "Triggered by push event, finding associated PR..."
+            PR_NUMBER=$(gh api repos/${{ github.repository }}/pulls \
+              --jq ".[] | select(.head.ref==\"${GITHUB_REF#refs/heads/}\") | .number" | head -1)
+            
+            if [ -z "$PR_NUMBER" ]; then
+              echo "✅ No PR found for this branch yet, skipping check"
+              exit 0
+            fi
+          else
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+          fi
+          
           # Fetch the current PR title from the GitHub API
-          PR_NUMBER="${{ github.event.pull_request.number }}"
           PR_TITLE=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER --jq '.title')
           
-          echo "Checking PR title: '$PR_TITLE'"
+          echo "Checking PR #$PR_NUMBER title: '$PR_TITLE'"
           echo "Title length: ${#PR_TITLE}"
           
           # Define the regex pattern for JIRA ticket format
